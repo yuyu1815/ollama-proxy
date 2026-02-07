@@ -3,7 +3,7 @@
  * GUI management API endpoints
  */
 
-import { Hono, type Context } from 'hono';
+import { type Context, Hono } from 'hono';
 import type { ConfigManager } from '../../../infrastructure/config/manager.js';
 import { ProviderService } from '../../../infrastructure/config/provider_service.js';
 import type {
@@ -48,8 +48,10 @@ export function createAdminRouter(configManager: ConfigManager) {
   router.post('/api/models', async (c) => {
     try {
       const model = (await c.req.json()) as ModelConfig;
-      
-      if (await providerService.hasModelInProvider(model.provider, model.name)) {
+
+      if (
+        await providerService.hasModelInProvider(model.provider, model.name)
+      ) {
         return c.json({ error: i18n.t('errors.model_already_exists') }, 400);
       }
 
@@ -65,8 +67,9 @@ export function createAdminRouter(configManager: ConfigManager) {
     try {
       const modelName = c.req.param('name');
       const updates = (await c.req.json()) as Partial<ModelConfig>;
-      
-      const providerId = await providerService.findProviderByModelName(modelName);
+
+      const providerId =
+        await providerService.findProviderByModelName(modelName);
       if (!providerId) {
         return c.json({ error: i18n.t('errors.simple_model_not_found') }, 404);
       }
@@ -82,8 +85,9 @@ export function createAdminRouter(configManager: ConfigManager) {
   router.delete('/api/models/:name', async (c) => {
     try {
       const modelName = c.req.param('name');
-      
-      const providerId = await providerService.findProviderByModelName(modelName);
+
+      const providerId =
+        await providerService.findProviderByModelName(modelName);
       if (!providerId) {
         return c.json({ error: i18n.t('errors.simple_model_not_found') }, 404);
       }
@@ -109,7 +113,7 @@ export function createAdminRouter(configManager: ConfigManager) {
   router.post('/api/providers', async (c) => {
     try {
       const { id, ...config } = await c.req.json();
-      
+
       if (await providerService.hasProvider(id)) {
         return c.json({ error: i18n.t('errors.provider_already_exists') }, 400);
       }
@@ -142,7 +146,7 @@ export function createAdminRouter(configManager: ConfigManager) {
   router.delete('/api/providers/:id', async (c) => {
     try {
       const providerId = c.req.param('id');
-      
+
       if (!(await providerService.hasProvider(providerId))) {
         return c.json({ error: i18n.t('errors.provider_not_found') }, 404);
       }

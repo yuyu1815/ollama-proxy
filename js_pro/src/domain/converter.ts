@@ -3,7 +3,7 @@
  * Converts AI SDK responses to Ollama format
  */
 
-import type { OllamaResponse, OllamaModel } from '../domain/types.js';
+import type { OllamaModel, OllamaResponse } from '../domain/types.js';
 
 function getTimestamp(): string {
   return new Date().toISOString().replace(/(\.\d{3})\d*Z$/, '$1Z');

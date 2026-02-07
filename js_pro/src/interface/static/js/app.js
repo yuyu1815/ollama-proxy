@@ -3,10 +3,10 @@
  */
 
 import {
-  createApp,
-  ref,
   computed,
+  createApp,
   onMounted,
+  ref,
 } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
 import { useModels } from './stores/models.js';
 import { useProviders } from './stores/providers.js';

@@ -6,8 +6,8 @@
 import { Hono } from 'hono';
 import { ConfigManager } from '../../../infrastructure/config/manager.js';
 import {
-  toOllamaModelListItem,
   toOllamaModelInfo,
+  toOllamaModelListItem,
 } from '../../../domain/converter.js';
 import i18n from '../../../infrastructure/i18n/index.js';
 
@@ -35,7 +35,10 @@ export function createModelsRouter(configManager: ConfigManager) {
 
     const modelConfig = configManager.getModelConfig(modelName);
     if (!modelConfig) {
-      return c.json({ error: i18n.t('errors.model_not_found', { modelName }) }, 404);
+      return c.json(
+        { error: i18n.t('errors.model_not_found', { modelName }) },
+        404
+      );
     }
 
     const info = toOllamaModelInfo(
@@ -76,7 +79,9 @@ export function createModelsRouter(configManager: ConfigManager) {
     router.post(endpoint, (c) => {
       return c.json(
         {
-          error: i18n.t('errors.not_supported_in_proxy', { endpoint: endpoint.replace('/', '') }),
+          error: i18n.t('errors.not_supported_in_proxy', {
+            endpoint: endpoint.replace('/', ''),
+          }),
         },
         501
       );

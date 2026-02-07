@@ -4,7 +4,7 @@
  */
 
 import { Hono } from 'hono';
-import { streamText, type CoreMessage } from 'ai';
+import { type CoreMessage, streamText } from 'ai';
 import { ConfigManager } from '../../../infrastructure/config/manager.js';
 import { createLanguageModel } from '../../../infrastructure/providers/factory.js';
 import {
@@ -19,7 +19,13 @@ export function createGenerateRouter(configManager: ConfigManager) {
 
   router.post('/', async (c) => {
     const body = (await c.req.json()) as OllamaGenerateRequest;
-    const { model: modelName, prompt, stream = true, system, format: _format } = body;
+    const {
+      model: modelName,
+      prompt,
+      stream = true,
+      system,
+      format: _format,
+    } = body;
 
     if (!modelName || !prompt) {
       return c.json({ error: i18n.t('errors.model_and_prompt_required') }, 400);
@@ -27,7 +33,10 @@ export function createGenerateRouter(configManager: ConfigManager) {
 
     const modelConfig = configManager.getModelConfig(modelName);
     if (!modelConfig) {
-      return c.json({ error: i18n.t('errors.model_not_found', { modelName }) }, 404);
+      return c.json(
+        { error: i18n.t('errors.model_not_found', { modelName }) },
+        404
+      );
     }
 
     try {
@@ -108,7 +117,10 @@ export function createGenerateRouter(configManager: ConfigManager) {
       console.error('Generate error:', error);
       return c.json(
         {
-          error: error instanceof Error ? error.message : i18n.t('errors.unknown_error'),
+          error:
+            error instanceof Error
+              ? error.message
+              : i18n.t('errors.unknown_error'),
         },
         500
       );

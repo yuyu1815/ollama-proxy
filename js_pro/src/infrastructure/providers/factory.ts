@@ -14,8 +14,8 @@ import { fireworks } from '@ai-sdk/fireworks';
 import { groq } from '@ai-sdk/groq';
 import { togetherai } from '@ai-sdk/togetherai';
 import type { ModelConfig, ProviderType } from '../../domain/types.js';
- 
- // Azure and Bedrock require special handling
+
+// Azure and Bedrock require special handling
  // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createLanguageModel(config: ModelConfig): any {
   const { provider, model_name, api_key, base_url } = config;

@@ -11,22 +11,6 @@ export class ProviderService {
     this.providersPath = providersPath || join(configDir, 'providers.json');
   }
 
-  private async readProviders(): Promise<Record<string, ProviderConfig>> {
-    try {
-      const content = await readFile(this.providersPath, 'utf-8');
-      return JSON.parse(content);
-    } catch (error) {
-      if (error && typeof error === 'object' && 'code' in error && (error as any).code === 'ENOENT') {
-        return {};
-      }
-      throw error;
-    }
-  }
-
-  private async writeProviders(data: Record<string, ProviderConfig>): Promise<void> {
-    await writeFile(this.providersPath, JSON.stringify(data, null, 2));
-  }
-
   async getProviders(): Promise<ProviderConfig[]> {
     const data = await this.readProviders();
     return Object.entries(data).map(([id, config]) => ({
@@ -44,7 +28,10 @@ export class ProviderService {
     await this.writeProviders(data);
   }
 
-  async updateProvider(id: string, updates: Partial<ProviderConfig>): Promise<void> {
+  async updateProvider(
+    id: string,
+    updates: Partial<ProviderConfig>
+  ): Promise<void> {
     const data = await this.readProviders();
     if (!data[id]) {
       throw new Error('errors.provider_not_found');
@@ -82,9 +69,12 @@ export class ProviderService {
     await this.writeProviders(data);
   }
 
-  async updateModel(name: string, updates: Partial<ModelConfig>): Promise<void> {
+  async updateModel(
+    name: string,
+    updates: Partial<ModelConfig>
+  ): Promise<void> {
     const data = await this.readProviders();
-    
+
     for (const provider of Object.values(data)) {
       const index = provider.models.findIndex((m) => m.name === name);
       if (index !== -1) {
@@ -97,17 +87,17 @@ export class ProviderService {
   }
 
   async deleteModel(name: string): Promise<void> {
-     const data = await this.readProviders();
-     
-     for (const provider of Object.values(data)) {
-       const index = provider.models.findIndex((m) => m.name === name);
-       if (index !== -1) {
-         provider.models.splice(index, 1);
-         await this.writeProviders(data);
-         return;
-       }
-     }
-     throw new Error('errors.simple_model_not_found');
+    const data = await this.readProviders();
+
+    for (const provider of Object.values(data)) {
+      const index = provider.models.findIndex((m) => m.name === name);
+      if (index !== -1) {
+        provider.models.splice(index, 1);
+        await this.writeProviders(data);
+        return;
+      }
+    }
+    throw new Error('errors.simple_model_not_found');
   }
 
   async hasProvider(id: string): Promise<boolean> {
@@ -115,7 +105,10 @@ export class ProviderService {
     return !!data[id];
   }
 
-  async hasModelInProvider(providerId: string, modelName: string): Promise<boolean> {
+  async hasModelInProvider(
+    providerId: string,
+    modelName: string
+  ): Promise<boolean> {
     const data = await this.readProviders();
     if (!data[providerId]) return false;
     return data[providerId].models.some((m) => m.name === modelName);
@@ -129,5 +122,28 @@ export class ProviderService {
       }
     }
     return null;
+  }
+
+  private async readProviders(): Promise<Record<string, ProviderConfig>> {
+    try {
+      const content = await readFile(this.providersPath, 'utf-8');
+      return JSON.parse(content);
+    } catch (error) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        (error as any).code === 'ENOENT'
+      ) {
+        return {};
+      }
+      throw error;
+    }
+  }
+
+  private async writeProviders(
+    data: Record<string, ProviderConfig>
+  ): Promise<void> {
+    await writeFile(this.providersPath, JSON.stringify(data, null, 2));
   }
 }

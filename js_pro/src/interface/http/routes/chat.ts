@@ -4,7 +4,7 @@
  */
 
 import { Hono } from 'hono';
-import { streamText, type CoreMessage } from 'ai';
+import { type CoreMessage, streamText } from 'ai';
 import { ConfigManager } from '../../../infrastructure/config/manager.js';
 import { createLanguageModel } from '../../../infrastructure/providers/factory.js';
 import {
@@ -19,16 +19,28 @@ export function createChatRouter(configManager: ConfigManager) {
 
   router.post('/', async (c) => {
     const body = (await c.req.json()) as OllamaChatRequest;
-    const { model: modelName, messages, stream = true, format: _format, tools: _tools } = body;
+    const {
+      model: modelName,
+      messages,
+      stream = true,
+      format: _format,
+      tools: _tools,
+    } = body;
 
     // Use guard clauses for validation
     if (!modelName || !messages || !Array.isArray(messages)) {
-      return c.json({ error: i18n.t('errors.model_and_messages_required') }, 400);
+      return c.json(
+        { error: i18n.t('errors.model_and_messages_required') },
+        400
+      );
     }
 
     const modelConfig = configManager.getModelConfig(modelName);
     if (!modelConfig) {
-      return c.json({ error: i18n.t('errors.model_not_found', { modelName }) }, 404);
+      return c.json(
+        { error: i18n.t('errors.model_not_found', { modelName }) },
+        404
+      );
     }
 
     try {
@@ -61,7 +73,9 @@ export function createChatRouter(configManager: ConfigManager) {
               }
               const duration = (Date.now() - startTime) / 1000;
               const finalData = toOllamaChatResponse('', modelName, duration);
-              controller.enqueue(encoder.encode(JSON.stringify(finalData) + '\n'));
+              controller.enqueue(
+                encoder.encode(JSON.stringify(finalData) + '\n')
+              );
               controller.close();
             },
           }),
@@ -86,7 +100,10 @@ export function createChatRouter(configManager: ConfigManager) {
       console.error('Chat error:', error);
       return c.json(
         {
-          error: error instanceof Error ? error.message : i18n.t('errors.unknown_error'),
+          error:
+            error instanceof Error
+              ? error.message
+              : i18n.t('errors.unknown_error'),
         },
         500
       );
