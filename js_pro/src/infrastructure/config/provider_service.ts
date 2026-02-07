@@ -15,8 +15,11 @@ export class ProviderService {
     try {
       const content = await readFile(this.providersPath, 'utf-8');
       return JSON.parse(content);
-    } catch {
-      return {};
+    } catch (error) {
+      if (error && typeof error === 'object' && 'code' in error && (error as any).code === 'ENOENT') {
+        return {};
+      }
+      throw error;
     }
   }
 
@@ -105,5 +108,26 @@ export class ProviderService {
        }
      }
      throw new Error('errors.simple_model_not_found');
+  }
+
+  async hasProvider(id: string): Promise<boolean> {
+    const data = await this.readProviders();
+    return !!data[id];
+  }
+
+  async hasModelInProvider(providerId: string, modelName: string): Promise<boolean> {
+    const data = await this.readProviders();
+    if (!data[providerId]) return false;
+    return data[providerId].models.some((m) => m.name === modelName);
+  }
+
+  async findProviderByModelName(modelName: string): Promise<string | null> {
+    const data = await this.readProviders();
+    for (const [providerId, config] of Object.entries(data)) {
+      if (config.models.some((m) => m.name === modelName)) {
+        return providerId;
+      }
+    }
+    return null;
   }
 }

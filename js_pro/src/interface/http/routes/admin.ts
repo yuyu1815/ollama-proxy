@@ -48,12 +48,14 @@ export function createAdminRouter(configManager: ConfigManager) {
   router.post('/api/models', async (c) => {
     try {
       const model = (await c.req.json()) as ModelConfig;
+      
+      if (await providerService.hasModelInProvider(model.provider, model.name)) {
+        return c.json({ error: i18n.t('errors.model_already_exists') }, 400);
+      }
+
       await providerService.addModel(model);
       return c.json({ success: true });
     } catch (error) {
-      if (error instanceof Error && error.message === 'errors.model_already_exists') {
-        return c.json({ error: i18n.t(error.message) }, 400);
-      }
       return handleError(c, error, 'errors.failed_to_create_model');
     }
   });
@@ -63,12 +65,15 @@ export function createAdminRouter(configManager: ConfigManager) {
     try {
       const modelName = c.req.param('name');
       const updates = (await c.req.json()) as Partial<ModelConfig>;
+      
+      const providerId = await providerService.findProviderByModelName(modelName);
+      if (!providerId) {
+        return c.json({ error: i18n.t('errors.simple_model_not_found') }, 404);
+      }
+
       await providerService.updateModel(modelName, updates);
       return c.json({ success: true });
     } catch (error) {
-      if (error instanceof Error && error.message === 'errors.simple_model_not_found') {
-        return c.json({ error: i18n.t(error.message) }, 404);
-      }
       return handleError(c, error, 'errors.failed_to_update_model');
     }
   });
@@ -77,12 +82,15 @@ export function createAdminRouter(configManager: ConfigManager) {
   router.delete('/api/models/:name', async (c) => {
     try {
       const modelName = c.req.param('name');
+      
+      const providerId = await providerService.findProviderByModelName(modelName);
+      if (!providerId) {
+        return c.json({ error: i18n.t('errors.simple_model_not_found') }, 404);
+      }
+
       await providerService.deleteModel(modelName);
       return c.json({ success: true });
     } catch (error) {
-      if (error instanceof Error && error.message === 'errors.simple_model_not_found') {
-        return c.json({ error: i18n.t(error.message) }, 404);
-      }
       return handleError(c, error, 'errors.failed_to_delete_model');
     }
   });
@@ -101,12 +109,14 @@ export function createAdminRouter(configManager: ConfigManager) {
   router.post('/api/providers', async (c) => {
     try {
       const { id, ...config } = await c.req.json();
+      
+      if (await providerService.hasProvider(id)) {
+        return c.json({ error: i18n.t('errors.provider_already_exists') }, 400);
+      }
+
       await providerService.addProvider(id, config);
       return c.json({ success: true });
     } catch (error) {
-      if (error instanceof Error && error.message === 'errors.provider_already_exists') {
-        return c.json({ error: i18n.t(error.message) }, 400);
-      }
       return handleError(c, error, 'errors.failed_to_create_provider');
     }
   });
@@ -116,12 +126,14 @@ export function createAdminRouter(configManager: ConfigManager) {
     try {
       const providerId = c.req.param('id');
       const updates = (await c.req.json()) as Partial<ProviderConfig>;
+
+      if (!(await providerService.hasProvider(providerId))) {
+        return c.json({ error: i18n.t('errors.provider_not_found') }, 404);
+      }
+
       await providerService.updateProvider(providerId, updates);
       return c.json({ success: true });
     } catch (error) {
-      if (error instanceof Error && error.message === 'errors.provider_not_found') {
-        return c.json({ error: i18n.t(error.message) }, 404);
-      }
       return handleError(c, error, 'errors.failed_to_update_provider');
     }
   });
@@ -130,12 +142,14 @@ export function createAdminRouter(configManager: ConfigManager) {
   router.delete('/api/providers/:id', async (c) => {
     try {
       const providerId = c.req.param('id');
+      
+      if (!(await providerService.hasProvider(providerId))) {
+        return c.json({ error: i18n.t('errors.provider_not_found') }, 404);
+      }
+
       await providerService.deleteProvider(providerId);
       return c.json({ success: true });
     } catch (error) {
-      if (error instanceof Error && error.message === 'errors.provider_not_found') {
-        return c.json({ error: i18n.t(error.message) }, 404);
-      }
       return handleError(c, error, 'errors.failed_to_delete_provider');
     }
   });
