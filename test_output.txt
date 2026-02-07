@@ -1,0 +1,28 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: C:\Users\yuzum\PycharmProjects\ollama-proxy
+configfile: pyproject.toml
+plugins: anyio-4.12.1, asyncio-1.3.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 3 items
+
+tests\test_server.py .F.                                                 [100%]
+
+================================== FAILURES ===================================
+____________________ test_chat_completions_missing_fields _____________________
+
+    def test_chat_completions_missing_fields():
+        # Act
+        response = client.post("/v1/chat/completions", json={})
+    
+        # Assert
+>       assert response.status_code == 400
+E       assert 500 == 400
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+tests\test_server.py:46: AssertionError
+------------------------------ Captured log call ------------------------------
+ERROR    ollama_proxy.server:server.py:89 Error processing request: 400: Missing model or messages
+=========================== short test summary info ===========================
+FAILED tests/test_server.py::test_chat_completions_missing_fields - assert 50...
+========================= 1 failed, 2 passed in 0.92s =========================
