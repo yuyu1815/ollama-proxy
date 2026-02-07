@@ -1,0 +1,30 @@
+{
+  "errors": {
+    "model_and_messages_required": "モデルとメッセージは必須です",
+    "model_not_found": "モデル '{{modelName}}' が見つかりません",
+    "model_and_prompt_required": "モデルとプロンプトは必須です",
+    "model_name_required": "モデル名は必須です",
+    "unknown_error": "不明なエラーが発生しました",
+    "not_supported_in_proxy": "{{endpoint}} はプロキシモードではサポートされていません",
+    "failed_to_save_config": "設定の保存に失敗しました",
+    "failed_to_create_model": "モデルの作成に失敗しました",
+    "model_already_exists": "モデルは既に存在します",
+    "failed_to_update_model": "モデルの更新に失敗しました",
+    "failed_to_delete_model": "モデルの削除に失敗しました",
+    "failed_to_load_providers": "プロバイダーの読み込みに失敗しました",
+    "provider_already_exists": "プロバイダーは既に存在します",
+    "failed_to_create_provider": "プロバイダーの作成に失敗しました",
+    "provider_not_found": "プロバイダーが見つかりません",
+    "failed_to_update_provider": "プロバイダーの更新に失敗しました",
+    "failed_to_delete_provider": "プロバイダーの削除に失敗しました",
+    "simple_model_not_found": "モデルが見つかりません"
+  },
+  "server": {
+    "status": "Ollama Proxy は稼働中です"
+  },
+  "admin": {
+    "files_saved": "ファイルが正常に保存されました",
+    "server_reloaded": "サーバーがリロードされました",
+    "config_updated": "設定が更新されました"
+  }
+}

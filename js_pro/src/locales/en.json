@@ -1,0 +1,30 @@
+{
+  "errors": {
+    "model_and_messages_required": "model and messages are required",
+    "model_not_found": "model '{{modelName}}' not found",
+    "model_and_prompt_required": "model and prompt are required",
+    "model_name_required": "model name required",
+    "unknown_error": "Unknown error",
+    "not_supported_in_proxy": "{{endpoint}} is not supported in proxy mode",
+    "failed_to_save_config": "Failed to save config",
+    "failed_to_create_model": "Failed to create model",
+    "model_already_exists": "Model already exists",
+    "failed_to_update_model": "Failed to update model",
+    "failed_to_delete_model": "Failed to delete model",
+    "failed_to_load_providers": "Failed to load providers",
+    "provider_already_exists": "Provider already exists",
+    "failed_to_create_provider": "Failed to create provider",
+    "provider_not_found": "Provider not found",
+    "failed_to_update_provider": "Failed to update provider",
+    "failed_to_delete_provider": "Failed to delete provider",
+    "simple_model_not_found": "Model not found"
+  },
+  "server": {
+    "status": "Ollama Proxy is running"
+  },
+  "admin": {
+    "files_saved": "Files saved successfully",
+    "server_reloaded": "Server reloaded",
+    "config_updated": "Configuration updated"
+  }
+}

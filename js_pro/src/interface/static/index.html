@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ja" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ollama Proxy Admin</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    />
+    <link rel="stylesheet" href="/admin/static/css/custom.css" />
+  </head>
+  <body>
+    <div id="app" v-cloak class="container">
+      <header class="app-header">
+        <h1>
+          <i class="ph ph-robot app-icon"></i>
+          Ollama Proxy
+        </h1>
+        <div class="actions">
+          <button @click="reloadConfig" :aria-busy="reloading" class="outline">
+            <i class="ph ph-arrows-clockwise"></i> Reload
+          </button>
+        </div>
+      </header>
+
+      <nav class="tabs">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          :class="{ active: currentTab === tab.id }"
+          @click="currentTab = tab.id"
+        >
+          <i :class="tab.icon"></i> {{ tab.label }}
+        </button>
+      </nav>
+
+      <section v-if="currentTab === 'models'" class="tab-content">
+        <div class="section-header">
+          <h2>Models ({{ models.length }})</h2>
+          <button @click="openAddModel">
+            <i class="ph ph-plus"></i> Add Model
+          </button>
+        </div>
+
+        <div v-if="models.length === 0" class="empty-state">
+          <i class="ph ph-robot empty-icon"></i>
+          <p>No models configured</p>
+          <button @click="openAddModel">Add your first model</button>
+        </div>
+
+        <div v-else class="card-list">
+          <div v-for="model in models" :key="model.name" class="card">
+            <div class="card-content">
+              <strong>{{ model.name }}</strong>
+              <span class="secondary badge">
+                {{ model.provider }}/{{ model.model_name }}
+              </span>
+            </div>
+            <div class="card-actions">
+              <button class="outline" @click="editModel(model)" title="Edit">
+                <i class="ph ph-pencil"></i>
+              </button>
+              <button
+                class="outline"
+                @click="deleteModel(model.name)"
+                title="Delete"
+              >
+                <i class="ph ph-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="currentTab === 'providers'" class="tab-content">
+        <div class="section-header">
+          <h2>Providers ({{ providers.length }})</h2>
+          <button @click="openAddProvider">
+            <i class="ph ph-plus"></i> Add Provider
+          </button>
+        </div>
+
+        <div v-if="providers.length === 0" class="empty-state">
+          <i class="ph ph-plug empty-icon"></i>
+          <p>No providers configured</p>
+        </div>
+
+        <div v-else class="card-list">
+          <div v-for="provider in providers" :key="provider.id" class="card">
+            <div class="card-content">
+              <strong>{{ provider.id }}</strong>
+              <span class="secondary badge">{{ provider.provider }}</span>
+            </div>
+            <div class="card-actions">
+              <button
+                class="outline"
+                @click="editProvider(provider)"
+                title="Edit"
+              >
+                <i class="ph ph-pencil"></i>
+              </button>
+              <button
+                class="outline"
+                @click="deleteProvider(provider.id)"
+                title="Delete"
+              >
+                <i class="ph ph-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="currentTab === 'settings'" class="tab-content">
+        <h2>Settings</h2>
+        <form @submit.prevent="saveSettings" class="settings-form">
+          <label>
+            Host
+            <input v-model="config.host" type="text" placeholder="127.0.0.1" />
+          </label>
+          <label>
+            Port
+            <input
+              v-model.number="config.port"
+              type="number"
+              placeholder="11434"
+            />
+          </label>
+          <label>
+            Log Level
+            <select v-model="config.log_level">
+              <option value="debug">Debug</option>
+              <option value="info">Info</option>
+              <option value="warn">Warn</option>
+              <option value="error">Error</option>
+            </select>
+          </label>
+          <div class="form-actions">
+            <button type="submit">Save Settings</button>
+          </div>
+        </form>
+      </section>
+
+      <dialog :open="isModelModalOpen" class="modal">
+        <article class="modal-content">
+          <header class="modal-header">
+            <h3>{{ editingModel ? 'Edit Model' : 'Add Model' }}</h3>
+            <button class="outline close-btn" @click="closeModelModal">
+              ✕
+            </button>
+          </header>
+          <form @submit.prevent="saveModel" class="modal-form">
+            <label>
+              Model Name (Ollama)
+              <input
+                v-model="modelForm.name"
+                placeholder="gpt-4o"
+                required
+                :disabled="!!editingModel"
+              />
+            </label>
+            <label>
+              Provider
+              <select v-model="modelForm.provider" required>
+                <option v-for="p in availableProviders" :key="p" :value="p">
+                  {{ p }}
+                </option>
+              </select>
+            </label>
+            <label>
+              Actual Model ID
+              <input
+                v-model="modelForm.model_name"
+                placeholder="gpt-4o"
+                required
+              />
+            </label>
+            <footer class="modal-footer">
+              <button type="button" class="outline" @click="closeModelModal">
+                Cancel
+              </button>
+              <button type="submit">Save</button>
+            </footer>
+          </form>
+        </article>
+      </dialog>
+
+      <dialog :open="isProviderModalOpen" class="modal">
+        <article class="modal-content">
+          <header class="modal-header">
+            <h3>{{ editingProvider ? 'Edit Provider' : 'Add Provider' }}</h3>
+            <button class="outline close-btn" @click="closeProviderModal">
+              ✕
+            </button>
+          </header>
+          <form @submit.prevent="saveProvider" class="modal-form">
+            <label>
+              Provider ID
+              <input
+                v-model="providerForm.id"
+                placeholder="my-openai"
+                required
+                :disabled="!!editingProvider"
+              />
+            </label>
+            <label>
+              Provider Type
+              <select v-model="providerForm.provider" required>
+                <option v-for="p in availableProviders" :key="p" :value="p">
+                  {{ p }}
+                </option>
+              </select>
+            </label>
+            <label>
+              API Key
+              <input
+                v-model="providerForm.api_key"
+                type="password"
+                placeholder="sk-..."
+              />
+            </label>
+            <label>
+              Base URL (Optional)
+              <input
+                v-model="providerForm.base_url"
+                placeholder="https://api.openai.com/v1"
+              />
+            </label>
+            <footer class="modal-footer">
+              <button type="button" class="outline" @click="closeProviderModal">
+                Cancel
+              </button>
+              <button type="submit">Save</button>
+            </footer>
+          </form>
+        </article>
+      </dialog>
+
+      <Transition name="toast">
+        <div v-if="toast" :class="['toast', toast.type]">
+          <i :class="toastIcon"></i>
+          {{ toast.message }}
+        </div>
+      </Transition>
+    </div>
+
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script type="module" src="/admin/static/js/app.js"></script>
+  </body>
+</html>
