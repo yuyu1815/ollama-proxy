@@ -8,8 +8,8 @@ export default [
   pluginJs.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ["src/interface/static/**/*.{js,ts}"],
-    languageOptions: { globals: globals.browser }
+    files: ['src/interface/static/**/*.{js,ts}'],
+    languageOptions: { globals: globals.browser },
   },
   {
     rules: {

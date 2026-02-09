@@ -20,7 +20,7 @@
     "simple_model_not_found": "モデルが見つかりません"
   },
   "server": {
-    "status": "Ollama Proxy は稼働中です"
+    "status": "Ollama Proxy is running"
   },
   "admin": {
     "files_saved": "ファイルが正常に保存されました",

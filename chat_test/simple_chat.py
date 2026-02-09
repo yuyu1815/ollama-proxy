@@ -44,6 +44,7 @@ def chat_stream(model_name: str, message: str):
 
 if __name__ == "__main__":
     # 使用例（ストリーミング）
-    for chunk in chat_stream("lamma23", "寿限無寿限無"):
+    for chunk in chat_stream("glm-4.7", "寿限無寿限無"):
         print(chunk, end="]", flush=True)
-    print()
+    #print()
+    #print(chat("glm-4.7", "寿限無寿限無"))

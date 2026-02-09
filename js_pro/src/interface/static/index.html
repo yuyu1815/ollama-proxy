@@ -1,15 +1,15 @@
 <!doctype html>
 <html data-theme="dark" lang="ja">
+
 <head>
     <meta charset="UTF-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>Ollama Proxy Admin</title>
-    <link
-            href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
-            rel="stylesheet"
-    />
+    <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet"/>
     <link href="/admin/static/css/custom.css" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body>
 <div class="container" id="app" v-cloak>
     <header class="app-header">
@@ -19,223 +19,232 @@
         </h1>
         <div class="actions">
             <button :aria-busy="reloading" @click="reloadConfig" class="outline">
-                <i class="ph ph-arrows-clockwise"></i> Reload
+                <i class="ph ph-arrows-clockwise"></i> 設定再読み込み
             </button>
         </div>
     </header>
-
-    <nav class="tabs">
-        <button
-                :class="{ active: currentTab === tab.id }"
-                :key="tab.id"
-                @click="currentTab = tab.id"
-                v-for="tab in tabs"
-        >
-            <i :class="tab.icon"></i> {{ tab.label }}
-        </button>
-    </nav>
-
-    <section class="tab-content" v-if="currentTab === 'models'">
-        <div class="section-header">
-            <h2>Models ({{ models.length }})</h2>
-            <button @click="openAddModel">
-                <i class="ph ph-plus"></i> Add Model
-            </button>
-        </div>
-
-        <div class="empty-state" v-if="models.length === 0">
-            <i class="ph ph-robot empty-icon"></i>
-            <p>No models configured</p>
-            <button @click="openAddModel">Add your first model</button>
-        </div>
-
-        <div class="card-list" v-else>
-            <div :key="model.name" class="card" v-for="model in models">
-                <div class="card-content">
-                    <strong>{{ model.name }}</strong>
-                    <span class="secondary badge">
-                {{ model.provider }}/{{ model.model_name }}
-              </span>
-                </div>
-                <div class="card-actions">
-                    <button @click="editModel(model)" class="outline" title="Edit">
-                        <i class="ph ph-pencil"></i>
-                    </button>
-                    <button
-                            @click="deleteModel(model.name)"
-                            class="outline"
-                            title="Delete"
-                    >
-                        <i class="ph ph-trash"></i>
+    <!-- Configuration Tab -->
+    <section class="tab-content" v-if="currentTab === 'configuration'">
+        <div class="config-grid">
+            <!-- PROVIDERS SECTION -->
+            <div class="section-container providers-section">
+                <div class="section-header">
+                    <h2>プロバイダー</h2>
+                    <button @click="toggleAddProvider" class="outline">
+                        <i class="ph ph-plus"></i> {{ showAddProvider ? 'キャンセル' : 'プロバイダーを追加' }}
                     </button>
                 </div>
-            </div>
-        </div>
-    </section>
 
-    <section class="tab-content" v-if="currentTab === 'providers'">
-        <div class="section-header">
-            <h2>Providers ({{ providers.length }})</h2>
-            <button @click="openAddProvider">
-                <i class="ph ph-plus"></i> Add Provider
-            </button>
-        </div>
+                <!-- Add/Edit Provider Form (Collapsible) -->
+                <div class="provider-form-card" v-if="showAddProvider">
+                    <div class="provider-form-header">
+                        <div class="setup-label">{{ isEditingProvider ? 'プロバイダーの編集' : 'プロバイダーの設定' }}</div>
+                        <div class="setup-provider">{{ selectedProviderType }}</div>
+                    </div>
 
-        <div class="empty-state" v-if="providers.length === 0">
-            <i class="ph ph-plug empty-icon"></i>
-            <p>No providers configured</p>
-        </div>
-
-        <div class="card-list" v-else>
-            <div :key="provider.id" class="card" v-for="provider in providers">
-                <div class="card-content">
-                    <strong>{{ provider.id }}</strong>
-                    <span class="secondary badge">{{ provider.provider }}</span>
-                </div>
-                <div class="card-actions">
-                    <button
-                            @click="editProvider(provider)"
-                            class="outline"
-                            title="Edit"
-                    >
-                        <i class="ph ph-pencil"></i>
-                    </button>
-                    <button
-                            @click="deleteProvider(provider.id)"
-                            class="outline"
-                            title="Delete"
-                    >
-                        <i class="ph ph-trash"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="tab-content" v-if="currentTab === 'settings'">
-        <h2>Settings</h2>
-        <form @submit.prevent="saveSettings" class="settings-form">
-            <label>
-                Host
-                <input placeholder="127.0.0.1" type="text" v-model="config.host"/>
-            </label>
-            <label>
-                Port
-                <input
-                        placeholder="11434"
-                        type="number"
-                        v-model.number="config.port"
-                />
-            </label>
-            <label>
-                Log Level
-                <select v-model="config.log_level">
-                    <option value="debug">Debug</option>
-                    <option value="info">Info</option>
-                    <option value="warn">Warn</option>
-                    <option value="error">Error</option>
-                </select>
-            </label>
-            <div class="form-actions">
-                <button type="submit">Save Settings</button>
-            </div>
-        </form>
-    </section>
-
-    <dialog :open="isModelModalOpen" class="modal">
-        <article class="modal-content">
-            <header class="modal-header">
-                <h3>{{ editingModel ? 'Edit Model' : 'Add Model' }}</h3>
-                <button @click="closeModelModal" class="outline close-btn">
-                    ✕
-                </button>
-            </header>
-            <form @submit.prevent="saveModel" class="modal-form">
-                <label>
-                    Model Name (Ollama)
-                    <input
-                            :disabled="!!editingModel"
-                            placeholder="gpt-4o"
-                            required
-                            v-model="modelForm.name"
-                    />
-                </label>
-                <label>
-                    Provider
-                    <select required v-model="modelForm.provider">
-                        <option :key="p" :value="p" v-for="p in availableProviders">
+                    <!-- Provider Type Selector -->
+                    <div class="provider-selector" v-if="!isEditingProvider">
+                        <button :class="[selectedProviderType === p ? 'primary' : 'secondary']" :key="p" @click="setProviderType(p)"
+                                type="button"
+                                v-for="p in availableProviders">
                             {{ p }}
-                        </option>
-                    </select>
-                </label>
-                <label>
-                    Actual Model ID
-                    <input
-                            placeholder="gpt-4o"
-                            required
-                            v-model="modelForm.model_name"
-                    />
-                </label>
-                <footer class="modal-footer">
-                    <button @click="closeModelModal" class="outline" type="button">
-                        Cancel
-                    </button>
-                    <button type="submit">Save</button>
-                </footer>
-            </form>
-        </article>
-    </dialog>
+                        </button>
+                    </div>
 
-    <dialog :open="isProviderModalOpen" class="modal">
-        <article class="modal-content">
-            <header class="modal-header">
-                <h3>{{ editingProvider ? 'Edit Provider' : 'Add Provider' }}</h3>
-                <button @click="closeProviderModal" class="outline close-btn">
-                    ✕
-                </button>
-            </header>
-            <form @submit.prevent="saveProvider" class="modal-form">
-                <label>
-                    Provider ID
-                    <input
-                            :disabled="!!editingProvider"
-                            placeholder="my-openai"
-                            required
-                            v-model="providerForm.id"
-                    />
-                </label>
-                <label>
-                    Provider Type
-                    <select required v-model="providerForm.provider">
-                        <option :key="p" :value="p" v-for="p in availableProviders">
-                            {{ p }}
-                        </option>
-                    </select>
-                </label>
-                <label>
-                    API Key
-                    <input
-                            placeholder="sk-..."
-                            type="password"
-                            v-model="providerForm.api_key"
-                    />
-                </label>
-                <label>
-                    Base URL (Optional)
-                    <input
-                            placeholder="https://api.openai.com/v1"
-                            v-model="providerForm.base_url"
-                    />
-                </label>
-                <footer class="modal-footer">
-                    <button @click="closeProviderModal" class="outline" type="button">
-                        Cancel
+                    <form @submit.prevent="createProvider">
+                        <label>
+                            プロバイダーID (一意の名称)
+                            <input placeholder="例: my-openai-1" required v-model="providerForm.id"/>
+                        </label>
+                        <label>
+                            APIキー
+                            <input placeholder="sk-..." type="password" v-model="providerForm.api_key"/>
+                        </label>
+                        <label v-if="['openai', 'anthropic'].includes(selectedProviderType)">
+                            ベースURL (任意)
+                            <input placeholder="https://api.openai.com/v1" v-model="providerForm.base_url"/>
+                        </label>
+                        <label>
+                            最大リトライ回数 (任意)
+                            <input placeholder="5" type="number" v-model="providerForm.max_retries"/>
+                        </label>
+                        <label>
+                            レート制限 (任意)
+                            <div class="rate-limit-inputs">
+                                <input placeholder="リクエスト/分" type="number" v-model="providerForm.rate_limit.requests" title="1分間の最大リクエスト数"/>
+                                <input placeholder="同時実行数" type="number" v-model="providerForm.rate_limit.concurrent" title="同時処理可能なリクエスト数"/>
+                            </div>
+                        </label>
+                        <div class="form-actions">
+                            <button type="submit">{{ isEditingProvider ? 'プロバイダーを更新' : 'プロバイダーを保存' }}</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Existing Providers List -->
+                <div class="providers-list-container" v-if="providers.length > 0">
+                    <div :key="provider.id" class="provider-group" v-for="provider in providers">
+                        <h3 class="provider-header">{{ provider.provider }}</h3>
+                        <h4 class="provider-subheader">{{ provider.base_url || 'デフォルト' }}</h4>
+                        <div class="table-container">
+                            <table class="providers-table">
+                                <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>APIキー</th>
+                                    <th>レート制限</th>
+                                    <th>操作</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr :class="{ 'active-edit-row': isEditingProvider && originalProviderId === provider.id }">
+                                    <!-- VIEW MODE -->
+                                    <td><strong>{{ provider.id }}</strong></td>
+                                    <td>{{ truncateApiKey(provider.api_key) }}</td>
+                                    <td>
+                                        <div class="rate-limit-display">
+                                            <div class="rate-limit-row">{{ formatRateLimit(provider.rate_limit).requests }} req/min</div>
+                                            <div class="rate-limit-row">{{ formatRateLimit(provider.rate_limit).concurrent }} concurrent</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button @click="editProvider(provider)" class="outline icon-btn"
+                                                    title="編集">
+                                                <i class="ph ph-pencil"></i>
+                                            </button>
+                                            <button @click="deleteProvider(provider.id)"
+                                                    class="outline icon-btn destructive" title="削除">
+                                                <i class="ph ph-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center p-4" v-else>
+                    プロバイダーが設定されていません
+                </div>
+            </div>
+
+            <!-- MODELS SECTION -->
+            <div class="section-container models-section">
+                <div class="section-header">
+                    <h2>モデル</h2>
+                    <button @click="toggleAddModel" class="outline">
+                        <i class="ph ph-plus"></i> {{ showAddModel ? 'キャンセル' : 'モデルを追加' }}
                     </button>
-                    <button type="submit">Save</button>
-                </footer>
-            </form>
-        </article>
-    </dialog>
+                </div>
+
+                <!-- Add/Edit Model Form (Collapsible) -->
+                <div class="provider-form-card" v-if="showAddModel">
+                    <h3>{{ isEditingModel ? 'モデルを編集' : '新しいモデルを追加' }}</h3>
+                    <form @submit.prevent="createModel">
+                        <label v-if="!isEditingModel">
+                            プロバイダー
+                            <!-- BUTTON UI REFRACTOR -->
+                            <div class="provider-selector" style="margin-bottom: 1rem;">
+                                <button :class="[modelForm.provider === p.id ? 'primary' : 'secondary']" :key="p.id" @click="modelForm.provider = p.id"
+                                        type="button"
+                                        v-for="p in providers">
+                                    {{ p.id }}
+                                    <small v-if="p.provider !== p.id">
+                                        ({{ p.provider }})
+                                    </small>
+                                </button>
+                            </div>
+                        </label>
+                        <label v-else>
+                            プロバイダー: <strong>{{ modelForm.provider }}</strong>
+                        </label>
+                        <label>
+                            モデル名 (Ollamaでの名称)
+                            <input placeholder="gpt-4o" required v-model="modelForm.name"/>
+                        </label>
+                        <label>
+                            実際のモデルID (リモート)
+                            <input placeholder="gpt-4-turbo" required v-model="modelForm.model_name"/>
+                        </label>
+                        <label>
+                            レート制限 (任意 - プロバイダー設定を上書き)
+                            <div class="rate-limit-inputs">
+                                <input placeholder="リクエスト/分" type="number" v-model="modelForm.rate_limit.requests" title="1分間の最大リクエスト数"/>
+                                <input placeholder="同時実行数" type="number" v-model="modelForm.rate_limit.concurrent" title="同時処理可能なリクエスト数"/>
+                            </div>
+                        </label>
+                        <div class="form-actions">
+                            <button type="submit">{{ isEditingModel ? 'モデルを更新' : 'モデルを保存' }}</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Existing Models List -->
+                <!-- Grouped Models List -->
+                <div class="models-list-container">
+                    <template v-if="Object.keys(groupedModels).length > 0">
+                        <div :key="providerType" class="provider-type-group"
+                             v-for="(providerGroups, providerType) in groupedModels">
+                            <h3 class="provider-header">{{ providerType }}</h3>
+                            <div :key="providerId" class="provider-group"
+                                 v-for="(models, providerId) in providerGroups">
+                                <h4 class="provider-subheader">{{ providerId }}</h4>
+                                <div class="table-container">
+                                    <table class="providers-table models-table">
+                                        <thead>
+                                        <tr>
+                                            <th>名称</th>
+                                            <th>モデルID</th>
+                                            <th>レート制限</th>
+                                            <th>操作</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <template :key="model.name" v-for="model in models">
+                                            <!-- Display Mode (Edit is now in top form) -->
+                                            <tr :class="{ 'active-edit-row': isEditingModel && originalModelName === model.name }">
+                                                <td><strong>{{ model.name }}</strong></td>
+                                                <td>{{ model.model_name }}</td>
+                                                <td>
+                                                    <div class="rate-limit-display">
+                                                        <div class="rate-limit-row">{{ formatRateLimit(model.rate_limit).requests }} req/min</div>
+                                                        <div class="rate-limit-row">{{ formatRateLimit(model.rate_limit).concurrent }} concurrent</div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="action-buttons">
+                                                        <button @click="editModel(model)" class="outline icon-btn"
+                                                                title="編集">
+                                                            <i class="ph ph-pencil"></i>
+                                                        </button>
+                                                        <button @click="deleteModel(model.name)"
+                                                                class="outline icon-btn destructive" title="削除">
+                                                            <i class="ph ph-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                    <div class="text-center p-4" v-else>
+                        モデルが設定されていません
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Settings Tab (if we had one separate, but app.js mixes it) -->
+    <!-- app.js has saveSettings but no settings tab in tabs list? -->
+    <!-- Ah, app.js tabs: [{ id: 'configuration', ... }] -->
+    <!-- So we are good. -->
 
     <Transition name="toast">
         <div :class="['toast', toast.type]" v-if="toast">
@@ -248,4 +257,5 @@
 <script src="https://unpkg.com/@phosphor-icons/web"></script>
 <script src="/admin/static/js/app.js" type="module"></script>
 </body>
+
 </html>

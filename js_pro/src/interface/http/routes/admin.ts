@@ -5,6 +5,7 @@
 
 import { type Context, Hono } from 'hono';
 import type { ConfigManager } from '../../../infrastructure/config/manager.js';
+import type { UsageStorage } from '../../../infrastructure/storage/usage.js';
 import { ProviderService } from '../../../infrastructure/config/provider_service.js';
 import type {
   ModelConfig,
@@ -13,9 +14,12 @@ import type {
 } from '../../../domain/types.js';
 import i18n from '../../../infrastructure/i18n/index.js';
 
-export function createAdminRouter(configManager: ConfigManager) {
+export function createAdminRouter(
+  configManager: ConfigManager,
+  usageStorage: UsageStorage
+) {
   const router = new Hono();
-  const providerService = new ProviderService();
+  const providerService = new ProviderService(configManager.getProvidersPath());
 
   // Helper for error handling
   const handleError = (c: Context, error: unknown, messageKey: string) => {
@@ -160,6 +164,16 @@ export function createAdminRouter(configManager: ConfigManager) {
 
   // POST /admin/api/reload - Reload configuration
   router.post('/api/reload', (c) => c.json({ success: true }));
+
+  // GET /admin/api/stats - Get usage stats
+  router.get('/api/stats', (c) => {
+    return c.json({
+      daily: usageStorage.getDailyStats(),
+      models: usageStorage.getStatsByModel(),
+      providers: usageStorage.getStatsByProvider(),
+      recent: usageStorage.getLogs().slice(-100).reverse(),
+    });
+  });
 
   return router;
 }

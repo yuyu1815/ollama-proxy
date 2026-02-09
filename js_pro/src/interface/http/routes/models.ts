@@ -62,7 +62,7 @@ export function createModelsRouter(configManager: ConfigManager) {
 
   // Root endpoint
   router.get('/', (c) => {
-    return c.json({ status: i18n.t('server.status') });
+    return c.json({ status: 'Ollama is running' });
   });
 
   // Unimplemented endpoints

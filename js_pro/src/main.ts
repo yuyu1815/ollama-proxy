@@ -11,6 +11,7 @@ async function main() {
 
   // Initialize config manager
   const configManager = new ConfigManager();
+  await configManager.initialize();
   const serverConfig = configManager.getServerConfig();
 
   console.log(`📁 Config directory: ~/.ollama-proxy/`);
@@ -32,6 +33,7 @@ async function main() {
     hostname: serverConfig.host,
     port: serverConfig.port,
     fetch: app.fetch,
+    idleTimeout: 255, // Maximum timeout for long-running AI requests
   });
 
   // Graceful shutdown
