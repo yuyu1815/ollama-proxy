@@ -8,29 +8,46 @@ export type ProviderType =
   | 'anthropic'
   | 'google'
   | 'xai'
-  | 'azure'
   | 'mistral'
   | 'cohere'
   | 'deepseek'
   | 'togetherai'
   | 'groq'
-  | 'fireworks'
-  | 'bedrock';
+  | 'fireworks';
 
 export interface ModelConfig {
   name: string;
-  provider: ProviderType;
+  provider: string;
+  provider_type: ProviderType;
   model_name: string;
   api_key?: string;
   base_url?: string;
+  max_retries?: number;
   default_params?: Record<string, unknown>;
+  /** Model-specific rate limit (highest priority) */
+  rate_limit?: RateLimitConfig;
 }
 
 export interface ProviderConfig {
   provider: ProviderType;
   api_key?: string;
   base_url?: string;
+  max_retries?: number;
+  /** Provider-specific rate limit (medium priority) */
+  rate_limit?: RateLimitConfig;
   models: ModelConfig[];
+}
+
+/**
+ * Rate limit configuration
+ */
+export interface RateLimitConfig {
+  /** Maximum requests per window (default: 10) */
+  requests?: number;
+  /** Window size in milliseconds (default: 60000) */
+  window_ms?: number;
+  /** Maximum concurrent requests (default: 1) */
+  concurrent?: number;
 }
 
 export interface ServerConfig {
@@ -38,6 +55,8 @@ export interface ServerConfig {
   port: number;
   providers_file: string;
   log_level: 'debug' | 'info' | 'warn' | 'error';
+  /** Global rate limit configuration */
+  rate_limit?: RateLimitConfig;
 }
 
 export interface OllamaModel {
@@ -103,4 +122,18 @@ export interface OllamaResponse {
   eval_count: number;
   eval_duration: number;
   context?: number[];
+}
+
+export interface UsageLog {
+  timestamp: string;
+  provider: string;
+  model: string;
+  input_tokens: number;
+  output_tokens: number;
+}
+
+export interface UsageStats {
+  total_input_tokens: number;
+  total_output_tokens: number;
+  count: number;
 }

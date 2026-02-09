@@ -3,16 +3,16 @@
  * Creates AI SDK provider instances based on configuration
  */
 
-import { openai } from '@ai-sdk/openai';
-import { anthropic } from '@ai-sdk/anthropic';
-import { google } from '@ai-sdk/google';
-import { xai } from '@ai-sdk/xai';
-import { mistral } from '@ai-sdk/mistral';
-import { cohere } from '@ai-sdk/cohere';
-import { deepseek } from '@ai-sdk/deepseek';
-import { fireworks } from '@ai-sdk/fireworks';
-import { groq } from '@ai-sdk/groq';
-import { togetherai } from '@ai-sdk/togetherai';
+import { createOpenAI, openai } from '@ai-sdk/openai';
+import { anthropic, createAnthropic } from '@ai-sdk/anthropic';
+import { createGoogleGenerativeAI, google } from '@ai-sdk/google';
+import { createXai, xai } from '@ai-sdk/xai';
+import { createMistral, mistral } from '@ai-sdk/mistral';
+import { cohere, createCohere } from '@ai-sdk/cohere';
+import { createDeepSeek, deepseek } from '@ai-sdk/deepseek';
+import { createFireworks, fireworks } from '@ai-sdk/fireworks';
+import { createGroq, groq } from '@ai-sdk/groq';
+import { createTogetherAI, togetherai } from '@ai-sdk/togetherai';
 import type { ModelConfig, ProviderType } from '../../domain/types.js';
 
 // Azure and Bedrock require special handling
@@ -20,54 +20,70 @@ import type { ModelConfig, ProviderType } from '../../domain/types.js';
 export function createLanguageModel(config: ModelConfig): any {
   const { provider, model_name, api_key, base_url } = config;
 
-  const commonOptions: Record<string, string> = {};
-  if (api_key) commonOptions.apiKey = api_key;
-  if (base_url) commonOptions.baseURL = base_url;
+  const options: Record<string, string> = {};
+  if (api_key) options.apiKey = api_key;
+  if (base_url) options.baseURL = base_url;
 
   switch (provider) {
     case 'openai':
-      return openai(model_name, commonOptions);
+      if (api_key || base_url) {
+        return createOpenAI(options)(model_name);
+      }
+      return openai(model_name);
 
     case 'anthropic':
-      return anthropic(model_name, commonOptions);
+      if (api_key || base_url) {
+        return createAnthropic(options)(model_name);
+      }
+      return anthropic(model_name);
 
     case 'google':
-      return google(model_name, commonOptions);
+      if (api_key || base_url) {
+        return createGoogleGenerativeAI(options)(model_name);
+      }
+      return google(model_name);
 
     case 'xai':
-      return xai(model_name, commonOptions);
+      if (api_key || base_url) {
+        return createXai(options)(model_name);
+      }
+      return xai(model_name);
 
     case 'mistral':
-      return mistral(model_name, commonOptions);
+      if (api_key || base_url) {
+        return createMistral(options)(model_name);
+      }
+      return mistral(model_name);
 
     case 'cohere':
-      return cohere(model_name, commonOptions);
+      if (api_key || base_url) {
+        return createCohere(options)(model_name);
+      }
+      return cohere(model_name);
 
     case 'deepseek':
+      if (api_key || base_url) {
+        return createDeepSeek(options)(model_name);
+      }
       return deepseek(model_name);
 
     case 'fireworks':
+      if (api_key || base_url) {
+        return createFireworks(options)(model_name);
+      }
       return fireworks(model_name);
 
     case 'groq':
-      return groq(model_name, commonOptions);
+      if (api_key || base_url) {
+        return createGroq(options)(model_name);
+      }
+      return groq(model_name);
 
     case 'togetherai':
+      if (api_key || base_url) {
+        return createTogetherAI(options)(model_name);
+      }
       return togetherai(model_name);
-
-    case 'azure':
-      // Azure requires special handling via environment variables
-      // or explicit azure provider setup
-      return openai(model_name, {
-        ...commonOptions,
-        // Azure-specific configuration would go here
-      });
-
-    case 'bedrock':
-      // Bedrock requires AWS credentials
-      throw new Error(
-        'Bedrock provider requires AWS credentials setup. Please use other providers or configure AWS.'
-      );
 
     default:
       throw new Error(`Unsupported provider: ${provider}`);
@@ -82,14 +98,12 @@ export function isProviderSupported(
     'anthropic',
     'google',
     'xai',
-    'azure',
     'mistral',
     'cohere',
     'deepseek',
     'togetherai',
     'groq',
     'fireworks',
-    'bedrock',
   ];
   return supported.includes(provider as ProviderType);
 }

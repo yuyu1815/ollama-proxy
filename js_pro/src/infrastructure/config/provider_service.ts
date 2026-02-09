@@ -24,8 +24,13 @@ export class ProviderService {
     if (data[id]) {
       throw new Error('errors.provider_already_exists');
     }
-    data[id] = config;
+    console.log(`Adding provider: ${id}`, config);
+    data[id] = {
+      ...config,
+      models: config.models || [],
+    };
     await this.writeProviders(data);
+    console.log(`Successfully wrote providers to ${this.providersPath}`);
   }
 
   async updateProvider(
